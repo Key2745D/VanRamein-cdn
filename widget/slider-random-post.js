@@ -41,23 +41,19 @@
   function initSliderBox(box) {
     placeCredit(box);
 
-    // Ambil konfigurasi dari data-config
     const cfg = JSON.parse(box.dataset.config || "{}");
     const blogUrl = cfg.blogUrl || location.origin;
     const max = cfg.numPosts || 5;
     const interval = cfg.interval || 5000;
 
-    // Set dasar container agar rounded sesuai gambar
-    box.style.position = "relative";
-    box.style.overflow = "hidden";
-    box.style.borderRadius = "12px";
+    // Paksa container utama transparan
+    box.style.cssText = "position:relative; overflow:hidden; border-radius:12px; background:transparent !important; box-shadow:none !important; border:none !important;";
 
-    // Struktur HTML Slider
     box.innerHTML = `
-      <div class='slider' style="width:100%; display:block;"></div>
+      <div class='slider' style="width:100%; display:block; background:transparent !important;"></div>
       <button class='prev' style="position:absolute; left:15px; top:50%; transform:translateY(-50%); z-index:10; border-radius:50%; width:38px; height:38px; border:none; background:rgba(255,255,255,0.8); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); font-size:18px;">&#10094;</button>
       <button class='next' style="position:absolute; right:15px; top:50%; transform:translateY(-50%); z-index:10; border-radius:50%; width:38px; height:38px; border:none; background:rgba(255,255,255,0.8); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); font-size:18px;">&#10095;</button>
-      <div class='slideI' style="width:100%; display:flex; justify-content:center; align-items:center; background:transparent !important; padding:15px 0; border:none !important; box-shadow:none !important; margin:0 !important;"></div>
+      <div class='slideI' style="width:100% !important; display:flex !important; justify-content:center !important; align-items:center !important; background:transparent !important; padding:15px 0 !important; border:none !important; box-shadow:none !important; margin:0 !important; min-height:10px !important;"></div>
     `;
 
     let index = 1, timer;
@@ -76,11 +72,11 @@
         const label = e.category ? e.category[0].term : "Blogger";
 
         html += `
-        <div class='item' style="display:none; position:relative; width:100%;">
+        <div class='item' style="display:none; position:relative; width:100%; background:transparent !important;">
           <div class='category' style="position:absolute; top:20px; right:20px; z-index:5;">
             <a href='${blogUrl}/search/label/${encodeURIComponent(label)}' style="background:#fff; color:#333; padding:5px 15px; border-radius:20px; font-size:12px; font-weight:bold; text-decoration:none; box-shadow:0 4px 10px rgba(0,0,0,0.15); display:inline-block; font-family:sans-serif;">${label}</a>
           </div>
-          <div class='img' style="background-image:url('${img}'); padding-top:${ratio}; background-size:cover; background-position:center; width:100%;"></div>
+          <div class='img' style="background-image:url('${img}'); padding-top:${ratio}; background-size:cover; background-position:center; width:100%; border-radius:12px;"></div>
           <a class='cap' href='${link}' style="position:absolute; left:0; bottom:0; right:0; padding:50px 25px 25px; background:linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); color:#fff; text-decoration:none; font-size:1.2em; font-weight:600; font-family:sans-serif; border-radius: 0 0 12px 12px;">${title}</a>
         </div>`;
         d += `<span class='i' data-i='${i + 1}'></span>`;
@@ -97,7 +93,7 @@
 
         slides.forEach(s => s.style.display = "none");
         dots.forEach(dot => {
-          dot.style.cssText = "width:7px; height:7px; border-radius:50%; background:rgba(0,0,0,0.2); display:inline-block; margin:0 5px; cursor:pointer; transition:all .3s ease;";
+          dot.style.cssText = "width:7px !important; height:7px !important; border-radius:50% !important; background:rgba(0,0,0,0.2) !important; display:inline-block !important; margin:0 5px !important; cursor:pointer !important; transition:all .3s ease !important; border:none !important; box-shadow:none !important;";
         });
 
         if (slides[index - 1]) {
@@ -128,7 +124,6 @@
     document.head.appendChild(s);
   }
 
-  /* ================= BOOTSTRAP ================= */
   function boot() {
     const targets = document.querySelectorAll(".slideB");
     targets.forEach(initSliderBox);
