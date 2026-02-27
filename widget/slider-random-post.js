@@ -1,3 +1,11 @@
+document.addEventListener("DOMContentLoaded", initSlider);
+window.addEventListener("load", initSlider);
+
+function initSlider(){
+  if(window.__sliderRan) return;
+  window.__sliderRan = true;
+  startSlider(); // fungsi utama kamu
+}
 /* Root domain validator */
 (function () {
   const ROOT = "vanramein.blog";
