@@ -93,7 +93,7 @@
         slides.forEach(s => s.style.display = "none");
         dots.forEach(dot => {
           // Dots diperkecil lagi ke 5px
-          dot.style.cssText = "width:5px !important; height:5px !important; border-radius:50% !important; background:rgba(0,0,0,0.15) !important; display:inline-block !important; margin:0 4px !important; cursor:pointer !important; transition:all .3s ease !important; border:none !important;";
+          dot.style.cssText = "width:2px !important; height:2px !important; border-radius:50% !important; background:rgba(0,0,0,0.15) !important; display:inline-block !important; margin:0 4px !important; cursor:pointer !important; transition:all .3s ease !important; border:none !important;";
         });
 
         if (slides[index - 1]) {
