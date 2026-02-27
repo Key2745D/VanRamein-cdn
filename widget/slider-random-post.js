@@ -19,7 +19,7 @@ function waitVanrameinConfig(start){
   },50);
 }
 
-/* pindahkan seluruh script lama ke dalam sini */
+// pindahkan seluruh script lama ke dalam sini //
 waitVanrameinConfig(function(){
 
 if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
@@ -28,7 +28,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
 }
   
 (function(){
-  /* ================= DOMAIN VALIDATION ================= */
+  // ================= DOMAIN VALIDATION ================= //
   const REQUIRED_CREDIT = "www.vanramein.blog";
   if(!window.wcSliderRandom || window.wcSliderRandom.sharedBy !== REQUIRED_CREDIT){
     console.warn("VanRamein Slider blocked: credit removed");
