@@ -61,17 +61,18 @@ function initSliderBox(box){
   const max=cfg.numPosts||5;
   const interval=cfg.interval||5000;
 
+  /* ===== STRUCTURE (dots jadi overlay) ===== */
   box.innerHTML=`
-    <div class='slider'></div>
+    <div class='slider'>
+        <div class='slideI'></div>
+    </div>
     <button class='prev'>&#10094;</button>
     <button class='next'>&#10095;</button>
-    <div class='slideI'></div>
   `;
 
   const sliderRoot = box.querySelector('.slider');
   sliderRoot.style.position="relative";
   sliderRoot.style.width="100%";
-  sliderRoot.style.margin="0";
 
 /* ===== render ===== */
 
@@ -113,12 +114,28 @@ function render(json){
     d+=`<span class='i' data-i='${i+1}'></span>`;
   });
 
-  slider.innerHTML=html;
+  slider.insertAdjacentHTML("afterbegin",html);
   dots.innerHTML=d;
 
   slider.querySelectorAll(".item").forEach(el=>{
     el.style.transition="opacity .5s ease";
   });
+
+  /* ===== STYLE INDICATOR OVERLAY ===== */
+  dots.style.position="absolute";
+  dots.style.left="50%";
+  dots.style.bottom="12px";
+  dots.style.transform="translateX(-50%)";
+  dots.style.display="flex";
+  dots.style.gap="6px";
+  dots.style.padding="6px 10px";
+  dots.style.background="rgba(255,255,255,.35)";
+  dots.style.backdropFilter="blur(6px)";
+  dots.style.borderRadius="20px";
+  dots.style.width="auto";
+  dots.style.margin="0";
+  dots.style.boxShadow="none";
+  dots.style.zIndex="5";
 
   start();
 }
@@ -161,7 +178,6 @@ function start(){
   box.querySelectorAll(".i").forEach(dot=>{
     dot.onclick=()=>show(index=parseInt(dot.dataset.i));
   });
-
 }
 
 /* ===== jsonp ===== */
