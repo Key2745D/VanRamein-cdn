@@ -87,7 +87,7 @@
       const show = (n) => {
         if (n > slides.length) idx = 1; else if (n < 1) idx = slides.length; else idx = n;
         slides.forEach(s => s.style.display = "none");
-        dts.forEach(d => d.style.cssText = "width:5px; height:5px; background:rgba(0,0,0,0.15); margin:0 3px; border-radius:50%; display:inline-block; transition:0.3s; cursor:pointer;");
+        dts.forEach(d => d.style.cssText = "width:2px; height:2px; background:rgba(0,0,0,0.15); margin:0 3px; border-radius:50%; display:inline-block; transition:0.3s; cursor:pointer;");
         
         if(slides[idx-1]) {
           slides[idx-1].style.display = "block";
