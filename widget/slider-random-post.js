@@ -1,118 +1,94 @@
+/* VanRamein Blogger Cross Feed Slider */
 (function(){
 
-/* ========= WAIT CONFIG ========= */
-function waitConfig(cb){
- let t=setInterval(()=>{
-  if(window.wcSliderRandom){clearInterval(t);cb();}
- },50);
+if(!window.wcSliderRandom) return;
+
+const FEED = wcSliderRandom.feeds.replace(/\/$/,'');
+const LIMIT = wcSliderRandom.amount || 5;
+const NOIMG = wcSliderRandom.noImage;
+
+function ready(fn){
+ document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
 }
 
-waitConfig(start);
+function render(json){
 
-/* ========= START ========= */
-function start(){
+ const box = document.querySelector(".vanramein-slider");
+ if(!box) return;
 
-const cfg=window.wcSliderRandom;
-if(!cfg.feeds) return console.warn("Slider: feeds missing");
+ let html='';
+ let dots='';
 
-/* ========= CREATE CONTAINER ========= */
-let box=document.querySelector(".vanramein-slider");
-if(!box){
- box=document.createElement("div");
- box.className="vanramein-slider";
- document.body.appendChild(box);
-}
+ const entries = json.feed.entry || [];
 
-/* ========= BASIC STYLE AUTO ========= */
-if(!document.getElementById("vr-slider-style")){
- const s=document.createElement("style");
- s.id="vr-slider-style";
- s.textContent=`
- .vanramein-slider{position:relative;overflow:hidden}
- .vr-item{display:none;position:relative}
- .vr-img{display:block;padding-top:56%;background-size:cover;background-position:center}
- .vr-cap{position:absolute;left:0;right:0;bottom:0;padding:20px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7))}
- .vr-label{position:absolute;top:10px;right:10px;background:#fff;color:#000;padding:4px 10px;border-radius:20px;font-size:12px}
- .vr-dots{text-align:center;margin-top:6px}
- .vr-dots span{display:inline-block;width:6px;height:6px;background:#ccc;margin:0 3px;border-radius:10px}
- .vr-dots .a{width:18px;background:#f89000}
- `;
- document.head.appendChild(s);
-}
+ entries.forEach((post,i)=>{
 
-/* ========= HELPERS ========= */
-function getLabel(e){
- if(!e.link) return "";
- let l=e.link.find(x=>x.href && x.href.includes("/search/label/"));
- if(!l) return "";
- return decodeURIComponent(l.href.split("/search/label/")[1].split("?")[0]);
-}
+   const title = post.title.$t;
 
-function getImg(e){
- if(e.media$thumbnail?.url) return e.media$thumbnail.url.replace("s72-c","s1600");
- if(e.content?.$t){
-   let m=e.content.$t.match(/<img[^>]+src="([^"]+)"/i);
-   if(m) return m[1];
- }
- return cfg.noImage||"";
-}
+   const link = post.link.find(l=>l.rel==="alternate").href;
 
-/* ========= JSONP ========= */
-window.vrSliderFeed=function(json){
+   let img = NOIMG;
+   if(post.media$thumbnail)
+     img = post.media$thumbnail.url.replace("s72-c","s1600");
 
- if(!json.feed || !json.feed.entry){
-  box.innerHTML="";return;
- }
+   /* ===== AMBIL LABEL ASLI ===== */
+   let labelName="Artikel";
+   let labelUrl=link;
 
- let html='<div class="vr-wrap">';
- json.feed.entry.forEach((e,i)=>{
-  let title=e.title.$t;
-  let link=e.link.find(l=>l.rel==="alternate").href;
-  let img=getImg(e);
-  let label=getLabel(e);
+   if(post.category && post.category.length){
+      labelName = post.category[0].term;
+      labelUrl = FEED+"/search/label/"+encodeURIComponent(labelName);
+   }
 
-  html+=`
-  <a class="vr-item" href="${link}">
-   ${label?`<span class="vr-label">${label}</span>`:""}
-   <span class="vr-img" style="background-image:url('${img}')"></span>
-   <span class="vr-cap">${title}</span>
-  </a>`;
+   html+=`
+   <div class="item">
+     <div class="category">
+       <a class="button" href="${labelUrl}">${labelName}</a>
+     </div>
+     <a class="img" href="${link}" style="background-image:url(${img})"></a>
+     <a class="cap" href="${link}">${title}</a>
+   </div>`;
+
+   dots+=`<span class="i" onclick="vrSlide(${i+1})"></span>`;
  });
 
- html+='</div><div class="vr-dots"></div>';
  box.innerHTML=html;
+ document.querySelector(".vr-dots").innerHTML=dots;
 
- init();
-};
-
-/* ========= LOAD FEED ========= */
-const s=document.createElement("script");
-s.src=`${cfg.feeds}/feeds/posts/default?alt=json-in-script&max-results=${cfg.amount||5}&callback=vrSliderFeed`;
-document.body.appendChild(s);
-
-/* ========= ENGINE ========= */
-function init(){
- const items=[...box.querySelectorAll(".vr-item")];
- const dots=box.querySelector(".vr-dots");
- let i=0;
-
- items.forEach(()=>dots.innerHTML+="<span></span>");
- const di=[...dots.children];
-
- function show(n){
-  items.forEach(e=>e.style.display="none");
-  di.forEach(e=>e.classList.remove("a"));
-  items[n].style.display="block";
-  di[n].classList.add("a");
- }
-
- function next(){i=(i+1)%items.length;show(i);}
- show(0);
-
- if(cfg.auto==="true")
-  setInterval(next,parseInt(cfg.duration||4000));
+ startSlider();
 }
 
+let index=1;
+
+window.vrSlide=function(n){show(index=n)}
+window.vrNext=function(n){show(index+=n)}
+
+function show(n){
+ const slides=document.querySelectorAll(".vanramein-slider .item");
+ const dots=document.querySelectorAll(".vr-dots .i");
+
+ if(!slides.length) return;
+
+ if(n>slides.length) index=1;
+ if(n<1) index=slides.length;
+
+ slides.forEach(s=>s.style.display="none");
+ dots.forEach(d=>d.classList.remove("active"));
+
+ slides[index-1].style.display="block";
+ dots[index-1].classList.add("active");
 }
+
+function startSlider(){
+ show(index);
+ if(wcSliderRandom.auto==="true")
+   setInterval(()=>vrNext(1),wcSliderRandom.duration||4000);
+}
+
+ready(()=>{
+ const s=document.createElement("script");
+ s.src=`${FEED}/feeds/posts/default?alt=json-in-script&max-results=${LIMIT}&callback=render`;
+ document.body.appendChild(s);
+});
 
 })();
