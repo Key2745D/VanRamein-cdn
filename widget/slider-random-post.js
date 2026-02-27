@@ -3,7 +3,31 @@ VanRamein Random Post Slider - Clean Engine
 Domain: www.vanramein.blog
 File: /widget/slider-random-post.js
 */
+* ===== WAIT CONFIG (WAJIB PALING ATAS) ===== */
+(function(){
 
+function waitVanrameinConfig(start){
+  let retry=0;
+  const timer=setInterval(()=>{
+    if(window.wcSliderRandom && window.wcSliderRandom.sharedBy){
+      clearInterval(timer);
+      start();
+    }
+    if(retry++>200){
+      clearInterval(timer);
+      console.warn("VanRamein Slider blocked: config not found");
+    }
+  },50);
+}
+
+/* pindahkan seluruh script lama ke dalam sini */
+waitVanrameinConfig(function(){
+
+if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
+  console.warn("VanRamein Slider blocked: credit removed");
+  return;
+}
+  
 (function(){
   /* ================= DOMAIN VALIDATION ================= */
   const REQUIRED_CREDIT = "www.vanramein.blog";
@@ -110,3 +134,6 @@ const wcSliderRandom = {
   swipe:'true'
 }
 */
+}); // end waitVanrameinConfig
+})(); 
+/* ===== END WRAPPER ===== */
