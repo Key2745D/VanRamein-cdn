@@ -49,7 +49,6 @@ function validateCredit(box){
 const observer=new MutationObserver(()=>{
   document.querySelectorAll(".slideB").forEach(validateCredit);
 });
-observer.observe﻿
 observer.observe(document.body,{childList:true,subtree:true});
 
 /* ================= MAIN ================= */
@@ -69,23 +68,23 @@ function initSliderBox(box){
     <button class='next'>&#10095;</button>
     <div class='slideI'></div>
   `;
+
+/* paksa slider bukan konten artikel */
 const sliderRoot = box.querySelector('.slider');
-sliderRoot.style.width = "100%";
-sliderRoot.style.maxWidth = "100%";
-sliderRoot.style.margin = "0";
-sliderRoot.style.padding = "0";
-sliderRoot.style.display = "block";
-sliderRoot.style.boxSizing = "border-box";
+sliderRoot.style.width="100%";
+sliderRoot.style.maxWidth="100%";
+sliderRoot.style.margin="0";
+sliderRoot.style.padding="0";
+sliderRoot.style.display="block";
+sliderRoot.style.boxSizing="border-box";
+
   let index=1,timer;
 
-/* ===== RESPONSIVE RATIO FIX ===== */
+/* ===== RESPONSIVE RATIO ===== */
 function getRatio(){
-
   const w=window.innerWidth;
-
-  if(w<=480) return "70%";   // HP
-  if(w<=768) return "60%";   // tablet
-
+  if(w<=480) return "70%";
+  if(w<=768) return "60%";
   const r=getComputedStyle(document.documentElement).getPropertyValue('--sliderRatio');
   return r && r.trim()!=="" ? r : "45%";
 }
@@ -113,8 +112,7 @@ function render(json){
     const label=getLabel(e);
 
     html+=`
-<div class='item' style="width:100%;margin:0;padding:0;">
-    <div class='item'>
+    <div class='item' style="width:100%;margin:0;padding:0;">
       <div class='img'
            style="
              background-image:url('${img}');
@@ -174,6 +172,19 @@ function start(){
   box.querySelectorAll(".i").forEach(dot=>{
     dot.onclick=()=>show(index=parseInt(dot.dataset.i));
   });
+
+/* ===== FIX BAR ABU INDICATOR ===== */
+const indicator = box.querySelector('.slideI');
+indicator.style.width="auto";
+indicator.style.display="flex";
+indicator.style.justifyContent="center";
+indicator.style.alignItems="center";
+indicator.style.background="transparent";
+indicator.style.padding="10px 0";
+indicator.style.margin="0";
+indicator.style.boxShadow="none";
+indicator.style.borderRadius="0";
+
 }
 
 /* ===== jsonp ===== */
