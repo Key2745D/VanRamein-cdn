@@ -5,7 +5,7 @@
 const NO_IMAGE='data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const CREDIT_TEXT="created by: www.vanramein.blog";
 
-/* ================= CORE FUNCTIONS ================= */
+/* ================= CREDIT ================= */
 
 function disableSlider(box,reason){
   if(!box || box.dataset.vrDisabled) return;
@@ -45,7 +45,6 @@ function validateCredit(box){
   }
 }
 
-/* observer */
 const observer=new MutationObserver(()=>{
   document.querySelectorAll(".slideB").forEach(validateCredit);
 });
@@ -69,32 +68,13 @@ function initSliderBox(box){
     <div class='slideI'></div>
   `;
 
-/* paksa slider bukan konten artikel */
-const sliderRoot = box.querySelector('.slider');
-sliderRoot.style.width="100%";
-sliderRoot.style.maxWidth="100%";
-sliderRoot.style.margin="0";
-sliderRoot.style.padding="0";
-sliderRoot.style.display="block";
-sliderRoot.style.boxSizing="border-box";
-
-  let index=1,timer;
-
-/* ===== RESPONSIVE RATIO ===== */
-function getRatio(){
-  const w=window.innerWidth;
-  if(w<=480) return "70%";
-  if(w<=768) return "60%";
-  const r=getComputedStyle(document.documentElement).getPropertyValue('--sliderRatio');
-  return r && r.trim()!=="" ? r : "45%";
-}
-
-/* ===== label ===== */
-function getLabel(e){
-  return e.category?e.category[0].term:"Update";
-}
+  const sliderRoot = box.querySelector('.slider');
+  sliderRoot.style.position="relative";
+  sliderRoot.style.width="100%";
+  sliderRoot.style.margin="0";
 
 /* ===== render ===== */
+
 function render(json){
 
   const entries=json.feed.entry||[];
@@ -102,28 +82,26 @@ function render(json){
   const dots=box.querySelector(".slideI");
 
   let html="",d="";
-  const ratio=getRatio();
 
   entries.forEach((e,i)=>{
 
     const title=e.title.$t;
     const link=e.link.find(l=>l.rel==="alternate").href;
     const img=e.media$thumbnail?e.media$thumbnail.url.replace("s72-c","s1600"):NO_IMAGE;
-    const label=getLabel(e);
+    const label=e.category?e.category[0].term:"Update";
 
     html+=`
-    <div class='item' style="width:100%;margin:0;padding:0;">
+    <div class='item' style="position:absolute;inset:0;opacity:0;">
       <div class='img'
            style="
              background-image:url('${img}');
-             position:relative;
-             display:block;
              width:100%;
-             padding-top:${ratio};
+             aspect-ratio:16/9;
              background-position:center;
              background-size:cover;
              background-repeat:no-repeat;
              border-radius:var(--sliderBd-radius);
+             overflow:hidden;
            ">
         <div class='category'>
           <a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a>
@@ -138,25 +116,36 @@ function render(json){
   slider.innerHTML=html;
   dots.innerHTML=d;
 
+  slider.querySelectorAll(".item").forEach(el=>{
+    el.style.transition="opacity .5s ease";
+  });
+
   start();
 }
 
 /* ===== slider ===== */
 
+let index=1,timer;
+
 function show(n){
   const slides=box.querySelectorAll(".item");
   const dots=box.querySelectorAll(".i");
 
+  if(!slides.length) return;
+
   if(n>slides.length) index=1;
   if(n<1) index=slides.length;
 
-  slides.forEach(s=>s.style.display="none");
+  slides.forEach(s=>{
+    s.style.opacity="0";
+    s.style.pointerEvents="none";
+  });
+
   dots.forEach(x=>x.classList.remove("active"));
 
-  if(slides[index-1]){
-    slides[index-1].style.display="block";
-    dots[index-1].classList.add("active");
-  }
+  slides[index-1].style.opacity="1";
+  slides[index-1].style.pointerEvents="auto";
+  dots[index-1].classList.add("active");
 }
 
 function next(n){ show(index+=n); }
@@ -172,18 +161,6 @@ function start(){
   box.querySelectorAll(".i").forEach(dot=>{
     dot.onclick=()=>show(index=parseInt(dot.dataset.i));
   });
-
-/* ===== FIX BAR ABU INDICATOR ===== */
-const indicator = box.querySelector('.slideI');
-indicator.style.width="auto";
-indicator.style.display="flex";
-indicator.style.justifyContent="center";
-indicator.style.alignItems="center";
-indicator.style.background="transparent";
-indicator.style.padding="10px 0";
-indicator.style.margin="0";
-indicator.style.boxShadow="none";
-indicator.style.borderRadius="0";
 
 }
 
