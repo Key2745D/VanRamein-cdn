@@ -82,13 +82,13 @@ function render(json){
 
     html+=`
     <div class='item'>
-      <div class='img' style='background-image:url(${img})'>
-  <div class='category'>
-    <a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a>
+  <div class='img' style='background-image:url(${img});position:relative'>
+    <div class='category'>
+      <a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a>
+    </div>
+    <a class='cap' href='${link}'>${title}</a>
   </div>
-  <a class='cap' href='${link}'>${title}</a>
-</div>
-    </div>`;
+</div>`;
 
     d+=`<span class='i' data-i='${i+1}'></span>`;
   });
