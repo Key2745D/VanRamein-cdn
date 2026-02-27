@@ -5,36 +5,32 @@
 const NO_IMAGE='data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const CREDIT_TEXT="created by: www.vanramein.blog";
 
-/* ================= CREDIT GUARD ================= */
+/* ===== SMART CREDIT GUARD ===== */
 
-function placeCredit(box){
-  if(!box.nextElementSibling || !box.nextElementSibling.classList.contains("vr-credit")){
-    const c=document.createElement("div");
-    c.className="vr-credit";
-    c.innerHTML='<a href="https://www.vanramein.blog" target="_blank" rel="nofollow">created by: www.vanramein.blog</a>';
-    c.style.cssText="font-size:11px;text-align:right;margin-top:6px;opacity:.7";
-    box.after(c);
+function validateCredit(box){
+  const credit=box.nextElementSibling;
+
+  if(!credit || !credit.classList.contains("vr-credit")){
+    // tunggu repaint blogger
+    setTimeout(()=>{
+      const recheck=box.nextElementSibling;
+      if(!recheck || !recheck.classList.contains("vr-credit")){
+        disableSlider(box,"credit removed");
+      }
+    },800);
+    return;
+  }
+
+  if(credit.textContent.trim().toLowerCase()!==CREDIT_TEXT){
+    disableSlider(box,"credit edited");
   }
 }
 
-function disableSlider(box,reason){
-  box.innerHTML="";
-  console.warn("VanRamein Slider:",reason);
-}
-
 const observer=new MutationObserver(()=>{
-  document.querySelectorAll(".slideB").forEach(box=>{
-    const credit=box.nextElementSibling;
-    if(!credit || !credit.classList.contains("vr-credit")){
-      disableSlider(box,"credit removed");
-      return;
-    }
-    if(credit.textContent.trim().toLowerCase()!==CREDIT_TEXT){
-      disableSlider(box,"credit edited");
-    }
-  });
+  document.querySelectorAll(".slideB").forEach(validateCredit);
 });
-observer.observe(document.documentElement,{childList:true,subtree:true});
+
+observer.observe(document.body,{childList:true,subtree:true});
 
 /* ================= MAIN ================= */
 
