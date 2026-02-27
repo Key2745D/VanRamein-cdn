@@ -120,13 +120,6 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
     });
   });
 })();
-// ================= REQUIRED GLOBAL CONFIG =================
-const wcSliderRandom = {
-  amount:'5',
-  duration:'3000',
-  auto:'true',
-  swipe:'true'
-}
 //
 }); // end waitVanrameinConfig
 })(); 
