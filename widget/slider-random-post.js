@@ -1,4 +1,3 @@
-aku sudah membckupnya yang suda jadi yang belum merubha atau memnggati dots nya
 (function(){
 
 /* ================= BASIC ================= */
