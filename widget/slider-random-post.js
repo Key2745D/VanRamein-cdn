@@ -102,13 +102,14 @@ function startSlider(box){
 
   /* build feed url safely */
   const cb = Object.keys(window).find(k=>k.startsWith("vanramein_render_"));
-  let url;
+  const blog = location.origin;
 
-  if(!labelRaw || labelRaw==="recent"){
-    url=`/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=${cb}`;
-  }else{
-    url=`/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
-  }
+let url;
+if(!labelRaw || labelRaw==="recent"){
+  url=`${blog}/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=${cb}`;
+}else{
+  url=`${blog}/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
+}
 
   const s=document.createElement("script");
   s.src=url;
