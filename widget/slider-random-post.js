@@ -1,102 +1,127 @@
 (function(){
 
-  const sliders=document.querySelectorAll(".slideB");
+/* ================= CONFIG DEFAULT ================= */
+const DEFAULT = {
+  max:5,
+  interval:5000,
+  credit:"www.vanramein.blog"
+};
 
-  sliders.forEach((box,uid)=>{
+/* ================= CREDIT LOCK ================= */
+function hasCredit(box){
+  return (box.innerHTML||"").toLowerCase().includes(DEFAULT.credit);
+}
 
-    /* struktur */
-    box.innerHTML=`
-      <div class="slider"></div>
-      <button class="prev">&#10094;</button>
-      <button class="next">&#10095;</button>
-    `;
+function disable(box){
+  box.innerHTML="";
+  box.style.display="none";
+}
 
-    const dots=document.createElement("div");
-    dots.className="slideI";
-    box.after(dots);
+/* ================= SLIDER ENGINE ================= */
+function startSlider(box){
 
-    const slider=box.querySelector(".slider");
+  if(!hasCredit(box)){
+    disable(box);
+    return;
+  }
 
-    const label=box.getAttribute("data-label")||"";
-    const max=box.getAttribute("data-no")||5;
+  const max = parseInt(box.dataset.max)||DEFAULT.max;
+  const interval = parseInt(box.dataset.interval)||DEFAULT.interval;
+  const labelRaw = box.dataset.label || "";
+  const label = encodeURIComponent(labelRaw.trim());
 
-    /* ===== JSONP CALLBACK UNIQUE ===== */
-    const cb="sliderFeed_"+uid+Date.now();
+  const slider = box.querySelector(".slider");
+  const dots = box.querySelector(".slideI");
 
-    window[cb]=function(data){
+  let index=1, timer;
 
-      const posts=data.feed.entry||[];
+  /* render */
+  window["vanramein_render_"+Math.random().toString(36).slice(2)] = function(json){
 
-      posts.forEach((post,i)=>{
+    if(!json || !json.feed || !json.feed.entry){
+      box.style.display="none";
+      return;
+    }
 
-        const title=post.title.$t;
-        const link=post.link.find(l=>l.rel=="alternate").href;
+    let html="", dot="";
 
-        let img="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-placeholder";
-        if(post.media$thumbnail)
-          img=post.media$thumbnail.url.replace(/s72-c/,"s1600");
+    json.feed.entry.slice(0,max).forEach((post,i)=>{
 
-        const item=document.createElement("div");
-        item.className="item";
-        if(i===0)item.style.display="block";
+      const title = post.title.$t;
+      const link = post.link.find(l=>l.rel==="alternate").href;
 
-        item.innerHTML=`
-          <a class="img" href="${link}" style="background-image:url('${img}')"></a>
+      let img="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+      if(post.media$thumbnail){
+        img=post.media$thumbnail.url.replace("s72-c","s1600");
+      }
+
+      let labelName="Blogger";
+      if(post.category && post.category.length){
+        labelName=post.category[0].term;
+      }
+
+      html+=`
+      <div class="item">
+        <div class="img" style="background-image:url('${img}')">
+          <div class="category">
+            <a class="button" href="/search/label/${encodeURIComponent(labelName)}">${labelName}</a>
+          </div>
           <a class="cap" href="${link}">${title}</a>
-        `;
+        </div>
+      </div>`;
 
-        slider.appendChild(item);
+      dot+=`<span class="i" data-i="${i+1}"></span>`;
+    });
 
-        const dot=document.createElement("span");
-        dot.className="i"+(i===0?" active":"");
-        dot.onclick=()=>show(i);
-        dots.appendChild(dot);
+    slider.innerHTML=html;
+    dots.innerHTML=dot;
 
-      });
-
-      init();
-    };
-
-    /* inject script blogger feed */
-    const s=document.createElement("script");
-    s.src=`/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
-    document.body.appendChild(s);
-
-    /* ===== control ===== */
-    let index=0,auto;
+    const items=box.querySelectorAll(".item");
+    const d=box.querySelectorAll(".i");
 
     function show(n){
-      const items=slider.querySelectorAll(".item");
-      const d=dots.querySelectorAll(".i");
+      if(n>items.length)index=1;
+      if(n<1)index=items.length;
 
-      if(!items.length)return;
+      items.forEach(el=>el.style.display="none");
+      d.forEach(el=>el.classList.remove("active"));
 
-      if(n>=items.length)n=0;
-      if(n<0)n=items.length-1;
-      index=n;
-
-      items.forEach(i=>i.style.display="none");
-      d.forEach(x=>x.classList.remove("active"));
-
-      items[index].style.display="block";
-      d[index].classList.add("active");
+      items[index-1].style.display="block";
+      d[index-1].classList.add("active");
     }
 
-    function init(){
-      const prev=box.querySelector(".prev");
-      const next=box.querySelector(".next");
+    function next(){ show(++index); }
 
-      prev.onclick=()=>{show(index-1);reset();}
-      next.onclick=()=>{show(index+1);reset();}
+    box.querySelector(".prev").onclick=()=>show(--index);
+    box.querySelector(".next").onclick=()=>show(++index);
+    d.forEach(el=>el.onclick=()=>show(index=parseInt(el.dataset.i)));
 
-      auto=setInterval(()=>show(index+1),5000);
-    }
+    show(index);
+    timer=setInterval(next,interval);
+  };
 
-    function reset(){
-      clearInterval(auto);
-      auto=setInterval(()=>show(index+1),5000);
-    }
+  /* build feed url safely */
+  const cb = Object.keys(window).find(k=>k.startsWith("vanramein_render_"));
+  let url;
 
-  });
+  if(!labelRaw || labelRaw==="recent"){
+    url=`/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=${cb}`;
+  }else{
+    url=`/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
+  }
+
+  const s=document.createElement("script");
+  s.src=url;
+  s.onerror=()=>box.style.display="none";
+  document.body.appendChild(s);
+}
+
+/* ================= AUTO INIT ================= */
+function init(){
+  document.querySelectorAll(".slideB").forEach(startSlider);
+}
+
+if(document.readyState==="complete") init();
+else window.addEventListener("load",init);
 
 })();
