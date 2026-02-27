@@ -62,11 +62,14 @@ document.querySelectorAll(".slideB").forEach(function(box){
       let label = getLabel(e);
 
       html+=`
-      <div class='item'>
-        <div class='category'><a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a></div>
-        <a class='img' href='${link}' style='background-image:url(${thumb})'></a>
-        <a class='cap' href='${link}'>${title}</a>
-      </div>`;
+<div class='item'>
+  <a class='img' href='${link}' style='background-image:url(${thumb})'>
+    <span class='category'>
+      <span class='button'>${label}</span>
+    </span>
+  </a>
+  <a class='cap' href='${link}'>${title}</a>
+</div>`;
 
       d+=`<span class='i' data-i='${i+1}'></span>`;
     });
