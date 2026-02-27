@@ -6,9 +6,9 @@ File: /widget/slider-random-post.js
 
 (function(){
   /* ================= DOMAIN VALIDATION ================= */
-  const ROOT_DOMAIN = "www.vanramein.blog";
-  if(location.hostname !== ROOT_DOMAIN && !location.hostname.endsWith(".vanramein.blog")){
-    console.warn("VanRamein Slider blocked on:", location.hostname);
+  const REQUIRED_CREDIT = "www.vanramein.blog";
+  if(!window.wcSliderRandom || window.wcSliderRandom.sharedBy !== REQUIRED_CREDIT){
+    console.warn("VanRamein Slider blocked: credit removed");
     return;
   }
 
