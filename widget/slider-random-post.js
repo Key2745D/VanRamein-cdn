@@ -1,9 +1,8 @@
-/*
-VanRamein Random Post Slider - Clean Engine
-Domain: www.vanramein.blog
-File: /widget/slider-random-post.js
-*/
-* ===== WAIT CONFIG (WAJIB PALING ATAS) ===== */
+//VanRamein Random Post Slider - Clean Engine
+//Domain: www.vanramein.blog
+//File: /widget/slider-random-post.js
+
+// ===== WAIT CONFIG (WAJIB PALING ATAS) ===== //
 (function(){
 
 function waitVanrameinConfig(start){
@@ -36,7 +35,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
     return;
   }
 
-  /* ================= LIGHT OBFUSCATION ================= */
+  // ================= LIGHT OBFUSCATION ================= //
   const _s=[
     "querySelector","appendChild","createElement","innerHTML",
     "addEventListener","classList","contains","length",
@@ -45,12 +44,12 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
   ];
   const $=(i)=>_s[i];
 
-  /* ================= WAIT DOM ================= */
+  // ================= WAIT DOM ================= //
   function ready(fn){
     document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
   }
 
-  /* ================= FETCH POSTS ================= */
+  // ================= FETCH POSTS ================= //
   function fetchPosts(cb){
     const amount=(window.wcSliderRandom?.amount)||5;
     fetch(_s[8]+amount)
@@ -59,7 +58,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
       .catch(e=>console.warn("Slider fetch fail",e));
   }
 
-  /* ================= BUILD HTML ================= */
+  // ================= BUILD HTML ================= //
   function build(container,posts){
     let html='<div class="slider">';
     posts.forEach(p=>{
@@ -75,7 +74,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
     container[$(3)]=html;
   }
 
-  /* ================= SLIDER ENGINE ================= */
+  // ================= SLIDER ENGINE ================= //
   function engine(container){
     const items=[...container.querySelectorAll('.item')];
     const dots=container.querySelector('.slideI');
@@ -97,7 +96,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
     if(window.wcSliderRandom?.auto==='true')
       setInterval(next,parseInt(window.wcSliderRandom?.duration||3000));
 
-    /* swipe */
+    // swipe //
     if(window.wcSliderRandom?.swipe==='true'){
       let sx=0;
       container.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
@@ -111,7 +110,7 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
     }
   }
 
-  /* ================= START ================= */
+  // ================= START ================= //
   ready(()=>{
     const box=document.querySelector('.vanrameinslider');
     if(!box) return;
@@ -122,18 +121,18 @@ if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
   });
 })();
 
-/* ================= HTML CONTAINER =================
+// ================= HTML CONTAINER =================
 <div class='slideB vanrameinslider'></div>
-*/
+//
 
-/* ================= REQUIRED GLOBAL CONFIG =================
+// ================= REQUIRED GLOBAL CONFIG =================
 const wcSliderRandom = {
   amount:'5',
   duration:'3000',
   auto:'true',
   swipe:'true'
 }
-*/
+//
 }); // end waitVanrameinConfig
 })(); 
-/* ===== END WRAPPER ===== */
+// ===== END WRAPPER ===== //
