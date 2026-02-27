@@ -5,13 +5,32 @@
 const NO_IMAGE='data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const CREDIT_TEXT="created by: www.vanramein.blog";
 
-/* ===== SMART CREDIT GUARD ===== */
+/* ================= CORE FUNCTIONS (WAJIB DI ATAS) ================= */
+
+function disableSlider(box,reason){
+  if(!box || box.dataset.vrDisabled) return;
+  box.dataset.vrDisabled="1";
+  box.innerHTML="";
+  console.warn("VanRamein Slider:",reason);
+}
+
+function placeCredit(box){
+  if(!box) return;
+  if(!box.nextElementSibling || !box.nextElementSibling.classList.contains("vr-credit")){
+    const c=document.createElement("div");
+    c.className="vr-credit";
+    c.innerHTML='<a href="https://www.vanramein.blog" target="_blank" rel="nofollow">created by: www.vanramein.blog</a>';
+    c.style.cssText="font-size:11px;text-align:right;margin-top:6px;opacity:.7";
+    box.after(c);
+  }
+}
 
 function validateCredit(box){
+  if(!box || box.dataset.vrDisabled) return;
+
   const credit=box.nextElementSibling;
 
   if(!credit || !credit.classList.contains("vr-credit")){
-    // tunggu repaint blogger
     setTimeout(()=>{
       const recheck=box.nextElementSibling;
       if(!recheck || !recheck.classList.contains("vr-credit")){
@@ -26,10 +45,11 @@ function validateCredit(box){
   }
 }
 
+/* ================= OBSERVER ================= */
+
 const observer=new MutationObserver(()=>{
   document.querySelectorAll(".slideB").forEach(validateCredit);
 });
-
 observer.observe(document.body,{childList:true,subtree:true});
 
 /* ================= MAIN ================= */
@@ -52,7 +72,7 @@ function initSliderBox(box){
 
   let index=1,timer;
 
-/* ===== ambil ratio css root ===== */
+/* ===== ambil ratio css ===== */
 function getRatio(){
   const r=getComputedStyle(document.documentElement).getPropertyValue('--sliderRatio');
   return r && r.trim()!=="" ? r : "45%";
@@ -110,7 +130,7 @@ function render(json){
   start();
 }
 
-/* ===== slide logic ===== */
+/* ===== slider logic ===== */
 
 function show(n){
   const slides=box.querySelectorAll(".item");
@@ -154,7 +174,8 @@ document.head.appendChild(s);
 
 }
 
-/* init */
+/* ================= BOOT ================= */
+
 function boot(){
   document.querySelectorAll(".slideB").forEach(initSliderBox);
 }
