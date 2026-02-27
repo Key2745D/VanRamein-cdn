@@ -1,152 +1,118 @@
-//VanRamein Random Post Slider - Stable Engine
-//File: /widget/slider-random-post.js
-
 (function(){
 
-/* ================= WAIT CONFIG ================= */
-function waitVanrameinConfig(start){
-  let retry=0;
-  const timer=setInterval(()=>{
-    if(window.wcSliderRandom && window.wcSliderRandom.sharedBy){
-      clearInterval(timer);
-      start();
-    }
-    if(retry++>200){
-      clearInterval(timer);
-      console.warn("VanRamein Slider blocked: config not found");
-    }
-  },50);
+/* ========= WAIT CONFIG ========= */
+function waitConfig(cb){
+ let t=setInterval(()=>{
+  if(window.wcSliderRandom){clearInterval(t);cb();}
+ },50);
 }
 
-waitVanrameinConfig(function(){
+waitConfig(start);
 
-/* ================= CREDIT VALIDATOR ================= */
-if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
-  console.warn("VanRamein Slider blocked: credit removed");
-  return;
+/* ========= START ========= */
+function start(){
+
+const cfg=window.wcSliderRandom;
+if(!cfg.feeds) return console.warn("Slider: feeds missing");
+
+/* ========= CREATE CONTAINER ========= */
+let box=document.querySelector(".vanramein-slider");
+if(!box){
+ box=document.createElement("div");
+ box.className="vanramein-slider";
+ document.body.appendChild(box);
 }
 
-/* ================= READY ================= */
-function ready(fn){
-  document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
+/* ========= BASIC STYLE AUTO ========= */
+if(!document.getElementById("vr-slider-style")){
+ const s=document.createElement("style");
+ s.id="vr-slider-style";
+ s.textContent=`
+ .vanramein-slider{position:relative;overflow:hidden}
+ .vr-item{display:none;position:relative}
+ .vr-img{display:block;padding-top:56%;background-size:cover;background-position:center}
+ .vr-cap{position:absolute;left:0;right:0;bottom:0;padding:20px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+ .vr-label{position:absolute;top:10px;right:10px;background:#fff;color:#000;padding:4px 10px;border-radius:20px;font-size:12px}
+ .vr-dots{text-align:center;margin-top:6px}
+ .vr-dots span{display:inline-block;width:6px;height:6px;background:#ccc;margin:0 3px;border-radius:10px}
+ .vr-dots .a{width:18px;background:#f89000}
+ `;
+ document.head.appendChild(s);
 }
 
-/* ================= FETCH BLOGGER JSONP ================= */
-function fetchPosts(cb){
-
-  const amount = window.wcSliderRandom.amount || 5;
-  const url = (window.wcSliderRandom.feeds || "https://www.vanramein.blog")
-      + "/feeds/posts/default?alt=json-in-script&max-results="+amount+"&callback=vanrameinSliderFeed";
-
-  window.vanrameinSliderFeed=function(json){
-    if(!json.feed || !json.feed.entry){
-      console.warn("VanRamein Slider: empty feed");
-      return;
-    }
-    cb(json.feed.entry);
-  };
-
-  const s=document.createElement("script");
-  s.src=url;
-  document.body.appendChild(s);
+/* ========= HELPERS ========= */
+function getLabel(e){
+ if(!e.link) return "";
+ let l=e.link.find(x=>x.href && x.href.includes("/search/label/"));
+ if(!l) return "";
+ return decodeURIComponent(l.href.split("/search/label/")[1].split("?")[0]);
 }
 
-/* ================= BUILD HTML ================= */
-function build(container,posts){
-
-  let html='<div class="slider">';
-
-  posts.forEach(p=>{
-
-    // link
-    let link="#";
-    if(p.link){
-      let alt=p.link.find(l=>l.rel==="alternate");
-      if(alt) link=alt.href;
-    }
-
-    // title
-    let title=(p.title && p.title.$t)?p.title.$t:"No title";
-
-    // image safe
-    let img="";
-    if(p.media$thumbnail && p.media$thumbnail.url){
-      img=p.media$thumbnail.url.replace("s72-c","s1600");
-    }else if(p.content && p.content.$t){
-      let m=p.content.$t.match(/<img.+src="([^"]+)"/);
-      if(m) img=m[1];
-    }
-    if(!img) img=window.wcSliderRandom.noImage||"";
-
-    // label
-    let label="";
-    if(p.category && p.category.length){
-      label=p.category[0].term;
-    }
-
-    html+=`<a class="item" href="${link}">
-      <div class="img" style="background-image:url('${img}')"></div>
-      <div class="cap">
-        ${label?`<span class="category">${label}</span>`:""}
-        ${title}
-      </div>
-    </a>`;
-  });
-
-  html+='</div><div class="slideI"></div>';
-  container.innerHTML=html;
+function getImg(e){
+ if(e.media$thumbnail?.url) return e.media$thumbnail.url.replace("s72-c","s1600");
+ if(e.content?.$t){
+   let m=e.content.$t.match(/<img[^>]+src="([^"]+)"/i);
+   if(m) return m[1];
+ }
+ return cfg.noImage||"";
 }
 
-/* ================= ENGINE ================= */
-function engine(container){
+/* ========= JSONP ========= */
+window.vrSliderFeed=function(json){
 
-  const items=[...container.querySelectorAll('.item')];
-  if(!items.length) return;
+ if(!json.feed || !json.feed.entry){
+  box.innerHTML="";return;
+ }
 
-  const dots=container.querySelector('.slideI');
-  let i=0;
+ let html='<div class="vr-wrap">';
+ json.feed.entry.forEach((e,i)=>{
+  let title=e.title.$t;
+  let link=e.link.find(l=>l.rel==="alternate").href;
+  let img=getImg(e);
+  let label=getLabel(e);
 
-  items.forEach(()=>dots.innerHTML+='<span class="i"></span>');
-  const di=[...dots.children];
+  html+=`
+  <a class="vr-item" href="${link}">
+   ${label?`<span class="vr-label">${label}</span>`:""}
+   <span class="vr-img" style="background-image:url('${img}')"></span>
+   <span class="vr-cap">${title}</span>
+  </a>`;
+ });
 
-  function show(n){
-    items.forEach(el=>el.style.display='none');
-    di.forEach(el=>el.classList.remove('active'));
-    items[n].style.display='block';
-    di[n].classList.add('active');
-  }
+ html+='</div><div class="vr-dots"></div>';
+ box.innerHTML=html;
 
-  function next(){ i=(i+1)%items.length; show(i); }
-  function prev(){ i=(i-1+items.length)%items.length; show(i); }
+ init();
+};
 
-  show(i);
+/* ========= LOAD FEED ========= */
+const s=document.createElement("script");
+s.src=`${cfg.feeds}/feeds/posts/default?alt=json-in-script&max-results=${cfg.amount||5}&callback=vrSliderFeed`;
+document.body.appendChild(s);
 
-  // auto slide
-  if(window.wcSliderRandom.auto==='true'){
-    setInterval(next,parseInt(window.wcSliderRandom.duration||3000));
-  }
+/* ========= ENGINE ========= */
+function init(){
+ const items=[...box.querySelectorAll(".vr-item")];
+ const dots=box.querySelector(".vr-dots");
+ let i=0;
 
-  // swipe
-  if(window.wcSliderRandom.swipe==='true'){
-    let sx=0;
-    container.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
-    container.addEventListener('touchend',e=>{
-      let dx=e.changedTouches[0].clientX-sx;
-      if(Math.abs(dx)>40) dx>0?prev():next();
-    },{passive:true});
-  }
+ items.forEach(()=>dots.innerHTML+="<span></span>");
+ const di=[...dots.children];
+
+ function show(n){
+  items.forEach(e=>e.style.display="none");
+  di.forEach(e=>e.classList.remove("a"));
+  items[n].style.display="block";
+  di[n].classList.add("a");
+ }
+
+ function next(){i=(i+1)%items.length;show(i);}
+ show(0);
+
+ if(cfg.auto==="true")
+  setInterval(next,parseInt(cfg.duration||4000));
 }
 
-/* ================= START ================= */
-ready(()=>{
-  const box=document.querySelector('.vanrameinslider');
-  if(!box) return;
+}
 
-  fetchPosts(posts=>{
-    build(box,posts);
-    engine(box);
-  });
-});
-
-}); // end wait config
 })();
