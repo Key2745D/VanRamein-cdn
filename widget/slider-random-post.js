@@ -1,94 +1,121 @@
-/* VanRamein Blogger Cross Feed Slider */
 (function(){
 
-if(!window.wcSliderRandom) return;
+/* ================= CREDIT LOCK ================= */
+const CREDIT_NAME = "www.vanramein.blog";
+const CREDIT_HASH = btoa(CREDIT_NAME);
 
-const FEED = wcSliderRandom.feeds.replace(/\/$/,'');
-const LIMIT = wcSliderRandom.amount || 5;
-const NOIMG = wcSliderRandom.noImage;
+function creditCheck(container){
+  let c = document.createElement("a");
+  c.href = "https://" + CREDIT_NAME;
+  c.style.display = "none";
+  c.dataset.vr = CREDIT_HASH;
+  container.appendChild(c);
 
-function ready(fn){
- document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
+  setTimeout(()=>{
+    if(!container.querySelector('[data-vr="'+CREDIT_HASH+'"]')){
+      container.innerHTML = "";
+      console.warn("VanRamein Slider: credit removed");
+      return false;
+    }
+  },1200);
+  return true;
 }
 
-function render(json){
+/* ================= CORE ================= */
+document.querySelectorAll(".slideB").forEach(function(box){
 
- const box = document.querySelector(".vanramein-slider");
- if(!box) return;
+  if(!creditCheck(box)) return;
 
- let html='';
- let dots='';
+  const cfg = JSON.parse(box.dataset.config || "{}");
 
- const entries = json.feed.entry || [];
+  const blogUrl = cfg.blogUrl || location.origin;
+  const max = cfg.numPosts || 5;
+  const interval = cfg.interval || 5000;
+  const noImage = 'data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
- entries.forEach((post,i)=>{
+  box.innerHTML = `
+    <div class='slider'></div>
+    <button class='prev'>&#10094;</button>
+    <button class='next'>&#10095;</button>
+    <div class='slideI'></div>
+  `;
 
-   const title = post.title.$t;
+  let slideIndex = 1;
+  let timer;
 
-   const link = post.link.find(l=>l.rel==="alternate").href;
+  function getLabel(entry){
+    if(!entry.category) return "Update";
+    return entry.category[0].term;
+  }
 
-   let img = NOIMG;
-   if(post.media$thumbnail)
-     img = post.media$thumbnail.url.replace("s72-c","s1600");
+  function render(json){
+    const entries = json.feed.entry || [];
+    const slider = box.querySelector(".slider");
+    const dots = box.querySelector(".slideI");
 
-   /* ===== AMBIL LABEL ASLI ===== */
-   let labelName="Artikel";
-   let labelUrl=link;
+    let html="", d="";
 
-   if(post.category && post.category.length){
-      labelName = post.category[0].term;
-      labelUrl = FEED+"/search/label/"+encodeURIComponent(labelName);
-   }
+    entries.forEach((e,i)=>{
+      let title = e.title.$t;
+      let link = e.link.find(l=>l.rel==="alternate").href;
+      let thumb = e.media$thumbnail ? e.media$thumbnail.url.replace('s72-c','s1600') : noImage;
+      let label = getLabel(e);
 
-   html+=`
-   <div class="item">
-     <div class="category">
-       <a class="button" href="${labelUrl}">${labelName}</a>
-     </div>
-     <a class="img" href="${link}" style="background-image:url(${img})"></a>
-     <a class="cap" href="${link}">${title}</a>
-   </div>`;
+      html+=`
+      <div class='item'>
+        <div class='category'><a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a></div>
+        <a class='img' href='${link}' style='background-image:url(${thumb})'></a>
+        <a class='cap' href='${link}'>${title}</a>
+      </div>`;
 
-   dots+=`<span class="i" onclick="vrSlide(${i+1})"></span>`;
- });
+      d+=`<span class='i' data-i='${i+1}'></span>`;
+    });
 
- box.innerHTML=html;
- document.querySelector(".vr-dots").innerHTML=dots;
+    slider.innerHTML=html;
+    dots.innerHTML=d;
 
- startSlider();
-}
+    init();
+  }
 
-let index=1;
+  function show(n){
+    const slides=box.querySelectorAll(".item");
+    const dots=box.querySelectorAll(".i");
 
-window.vrSlide=function(n){show(index=n)}
-window.vrNext=function(n){show(index+=n)}
+    if(n>slides.length) slideIndex=1;
+    if(n<1) slideIndex=slides.length;
 
-function show(n){
- const slides=document.querySelectorAll(".vanramein-slider .item");
- const dots=document.querySelectorAll(".vr-dots .i");
+    slides.forEach(s=>s.style.display="none");
+    dots.forEach(x=>x.classList.remove("active"));
 
- if(!slides.length) return;
+    if(slides[slideIndex-1]){
+      slides[slideIndex-1].style.display="block";
+      dots[slideIndex-1].classList.add("active");
+    }
+  }
 
- if(n>slides.length) index=1;
- if(n<1) index=slides.length;
+  function next(n){ show(slideIndex+=n); }
 
- slides.forEach(s=>s.style.display="none");
- dots.forEach(d=>d.classList.remove("active"));
+  function init(){
+    show(slideIndex);
 
- slides[index-1].style.display="block";
- dots[index-1].classList.add("active");
-}
+    timer=setInterval(()=>next(1),interval);
 
-function startSlider(){
- show(index);
- if(wcSliderRandom.auto==="true")
-   setInterval(()=>vrNext(1),wcSliderRandom.duration||4000);
-}
+    box.querySelector(".prev").onclick=()=>next(-1);
+    box.querySelector(".next").onclick=()=>next(1);
 
-ready(()=>{
- const s=document.createElement("script");
- s.src=`${FEED}/feeds/posts/default?alt=json-in-script&max-results=${LIMIT}&callback=render`;
- document.body.appendChild(s);
+    box.querySelectorAll(".i").forEach(dot=>{
+      dot.onclick=()=>show(slideIndex=parseInt(dot.dataset.i));
+    });
+  }
+
+  const s=document.createElement("script");
+  s.src=`${blogUrl}/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=vrSlider${Math.random().toString(36).substr(2,5)}`;
+
+  const callbackName=s.src.match(/callback=(.*?)$/)[1];
+  window[callbackName]=render;
+
+  document.head.appendChild(s);
+
 });
 
 })();
