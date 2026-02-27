@@ -3,6 +3,7 @@
   const NO_IMAGE = 'data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
   const CREDIT_TEXT = "created by: www.vanramein.blog";
 
+  /* ================= FUNGSI VALIDASI CREDIT (TRANSPARAN) ================= */
   function disableSlider(box, reason) {
     if (!box || box.dataset.vrDisabled) return;
     box.dataset.vrDisabled = "1";
@@ -15,25 +16,43 @@
       const c = document.createElement("div");
       c.className = "vr-credit";
       c.innerHTML = `<a href="https://www.vanramein.blog" target="_blank" rel="nofollow">${CREDIT_TEXT}</a>`;
-      c.style.cssText = "font-size:10px;text-align:right;margin-top:4px;opacity:.5;font-family:sans-serif;";
+      // Dibuat transparan total agar tidak muncul secara visual
+      c.style.cssText = "font-size:0px; height:0px; line-height:0; opacity:0; pointer-events:none; visibility:hidden; display:block;";
       box.after(c);
     }
   }
 
+  function validateCredit(box) {
+    if (!box || box.dataset.vrDisabled) return;
+    const credit = box.nextElementSibling;
+    if (!credit || !credit.classList.contains("vr-credit")) {
+      setTimeout(() => {
+        const recheck = box.nextElementSibling;
+        if (!recheck || !recheck.classList.contains("vr-credit")) disableSlider(box, "credit removed");
+      }, 800);
+      return;
+    }
+    if (credit.textContent.trim().toLowerCase() !== CREDIT_TEXT) {
+      disableSlider(box, "credit edited");
+    }
+  }
+
+  /* ================= CORE ENGINE ================= */
   function initSliderBox(box) {
     placeCredit(box);
+
     const cfg = JSON.parse(box.dataset.config || "{}");
     const blogUrl = cfg.blogUrl || location.origin;
     const max = cfg.numPosts || 5;
     const interval = cfg.interval || 5000;
 
-    box.style.cssText = "position:relative; overflow:hidden; border-radius:12px; background:transparent !important;";
+    box.style.cssText = "position:relative; overflow:hidden; border-radius:12px; background:transparent !important; box-shadow:none !important;";
 
     box.innerHTML = `
       <div class='slider' style="width:100%; display:block; background:transparent !important;"></div>
       <button class='prev' style="position:absolute; left:15px; top:50%; transform:translateY(-50%); z-index:10; border-radius:50%; width:38px; height:38px; border:none; background:rgba(255,255,255,0.8); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); font-size:18px;">&#10094;</button>
       <button class='next' style="position:absolute; right:15px; top:50%; transform:translateY(-50%); z-index:10; border-radius:50%; width:38px; height:38px; border:none; background:rgba(255,255,255,0.8); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); font-size:18px;">&#10095;</button>
-      <div class='slideI' style="width:100% !important; display:flex !important; justify-content:center !important; align-items:center !important; background:transparent !important; background-image:none !important; padding:15px 0 !important; border:none !important; box-shadow:none !important; margin:0 !important; min-height:10px !important;"></div>
+      <div class='slideI' style="width:100% !important; display:flex !important; justify-content:center !important; align-items:center !important; background:transparent !important; padding:12px 0 !important; border:none !important; box-shadow:none !important; margin:0 !important; min-height:10px !important;"></div>
     `;
 
     let index = 1, timer;
@@ -52,7 +71,7 @@
         const label = e.category ? e.category[0].term : "Blogger";
 
         html += `
-        <div class='item' style="display:none; position:relative; width:100%; background:transparent !important;">
+        <div class='item' style="display:none; position:relative; width:100%;">
           <div class='category' style="position:absolute; top:20px; right:20px; z-index:5;">
             <a href='${blogUrl}/search/label/${encodeURIComponent(label)}' style="background:#fff; color:#333; padding:5px 15px; border-radius:20px; font-size:12px; font-weight:bold; text-decoration:none; box-shadow:0 4px 10px rgba(0,0,0,0.15); display:inline-block; font-family:sans-serif;">${label}</a>
           </div>
@@ -73,13 +92,15 @@
 
         slides.forEach(s => s.style.display = "none");
         dots.forEach(dot => {
-          dot.style.cssText = "width:8px !important; height:8px !important; border-radius:50% !important; background:rgba(0,0,0,0.2) !important; display:inline-block !important; margin:0 5px !important; cursor:pointer !important; transition:all .3s ease !important; border:none !important; box-shadow:none !important;";
+          // Dots standar diperkecil ke 6px
+          dot.style.cssText = "width:6px !important; height:6px !important; border-radius:50% !important; background:rgba(0,0,0,0.15) !important; display:inline-block !important; margin:0 5px !important; cursor:pointer !important; transition:all .3s ease !important; border:none !important; box-shadow:none !important;";
         });
 
         if (slides[index - 1]) {
           slides[index - 1].style.display = "block";
-          dots[index - 1].style.width = "24px";
-          dots[index - 1].style.borderRadius = "10px";
+          // Dots aktif diperkecil sedikit panjangnya
+          dots[index - 1].style.width = "20px";
+          dots[index - 1].style.borderRadius = "8px";
           dots[index - 1].style.background = "#f89000"; 
         }
       };
@@ -104,7 +125,10 @@
   }
 
   function boot() {
-    document.querySelectorAll(".slideB").forEach(initSliderBox);
+    const targets = document.querySelectorAll(".slideB");
+    targets.forEach(initSliderBox);
+    const observer = new MutationObserver(() => { targets.forEach(validateCredit); });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
