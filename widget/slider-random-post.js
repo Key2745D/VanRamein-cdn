@@ -2,39 +2,39 @@
 
   const sliders=document.querySelectorAll(".slideB");
 
-  sliders.forEach(box=>{
+  sliders.forEach((box,uid)=>{
 
-    /* ===== STRUCTURE (dots keluar container) ===== */
+    /* struktur */
     box.innerHTML=`
-      <div class='slider'></div>
-      <button class='prev'>&#10094;</button>
-      <button class='next'>&#10095;</button>
+      <div class="slider"></div>
+      <button class="prev">&#10094;</button>
+      <button class="next">&#10095;</button>
     `;
 
-    const dotsWrap=document.createElement("div");
-    dotsWrap.className="slideI";
-    box.after(dotsWrap);
+    const dots=document.createElement("div");
+    dots.className="slideI";
+    box.after(dots);
 
     const slider=box.querySelector(".slider");
 
-    /* ===== AMBIL POST BLOGGER ===== */
-    const src=box.getAttribute("data-label")||"";
-    const max=parseInt(box.getAttribute("data-no"))||5;
+    const label=box.getAttribute("data-label")||"";
+    const max=box.getAttribute("data-no")||5;
 
-    fetch(`/feeds/posts/default/-/${src}?alt=json&max-results=${max}`)
-    .then(r=>r.json())
-    .then(data=>render(data.entry||[]));
+    /* ===== JSONP CALLBACK UNIQUE ===== */
+    const cb="sliderFeed_"+uid+Date.now();
 
-    /* ===== RENDER ===== */
-    function render(posts){
+    window[cb]=function(data){
+
+      const posts=data.feed.entry||[];
 
       posts.forEach((post,i)=>{
 
-        let title=post.title.$t;
-        let link=post.link.find(l=>l.rel=="alternate").href;
-        let img=(post.media$thumbnail)?
-          post.media$thumbnail.url.replace("s72-c","s1600"):
-          "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-placeholder";
+        const title=post.title.$t;
+        const link=post.link.find(l=>l.rel=="alternate").href;
+
+        let img="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-placeholder";
+        if(post.media$thumbnail)
+          img=post.media$thumbnail.url.replace(/s72-c/,"s1600");
 
         const item=document.createElement("div");
         item.className="item";
@@ -50,29 +50,36 @@
         const dot=document.createElement("span");
         dot.className="i"+(i===0?" active":"");
         dot.onclick=()=>show(i);
-        dotsWrap.appendChild(dot);
+        dots.appendChild(dot);
 
       });
 
       init();
-    }
+    };
 
-    /* ===== CONTROL ===== */
+    /* inject script blogger feed */
+    const s=document.createElement("script");
+    s.src=`/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
+    document.body.appendChild(s);
+
+    /* ===== control ===== */
     let index=0,auto;
 
     function show(n){
       const items=slider.querySelectorAll(".item");
-      const dots=dotsWrap.querySelectorAll(".i");
+      const d=dots.querySelectorAll(".i");
+
+      if(!items.length)return;
 
       if(n>=items.length)n=0;
       if(n<0)n=items.length-1;
       index=n;
 
       items.forEach(i=>i.style.display="none");
-      dots.forEach(d=>d.classList.remove("active"));
+      d.forEach(x=>x.classList.remove("active"));
 
       items[index].style.display="block";
-      dots[index].classList.add("active");
+      d[index].classList.add("active");
     }
 
     function init(){
