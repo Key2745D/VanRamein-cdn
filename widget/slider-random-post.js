@@ -1,4 +1,3 @@
-<script>
 (function(){
 
   const sliders=document.querySelectorAll(".slideB");
@@ -94,4 +93,3 @@
   });
 
 })();
-</script>
