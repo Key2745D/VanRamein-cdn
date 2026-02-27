@@ -5,7 +5,7 @@
 const NO_IMAGE='data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const CREDIT_TEXT="created by: www.vanramein.blog";
 
-/* ================= CREDIT GUARD (GLOBAL) ================= */
+/* ================= CREDIT GUARD ================= */
 
 function placeCredit(box){
   if(!box.nextElementSibling || !box.nextElementSibling.classList.contains("vr-credit")){
@@ -22,16 +22,13 @@ function disableSlider(box,reason){
   console.warn("VanRamein Slider:",reason);
 }
 
-/* observer stabil blogger ajax */
 const observer=new MutationObserver(()=>{
   document.querySelectorAll(".slideB").forEach(box=>{
     const credit=box.nextElementSibling;
-
     if(!credit || !credit.classList.contains("vr-credit")){
       disableSlider(box,"credit removed");
       return;
     }
-
     if(credit.textContent.trim().toLowerCase()!==CREDIT_TEXT){
       disableSlider(box,"credit edited");
     }
@@ -59,6 +56,12 @@ function initSliderBox(box){
 
   let index=1,timer;
 
+/* ===== ambil ratio css root ===== */
+function getRatio(){
+  const r=getComputedStyle(document.documentElement).getPropertyValue('--sliderRatio');
+  return r && r.trim()!=="" ? r : "45%";
+}
+
 /* ===== label ===== */
 function getLabel(e){
   return e.category?e.category[0].term:"Update";
@@ -72,6 +75,7 @@ function render(json){
   const dots=box.querySelector(".slideI");
 
   let html="",d="";
+  const ratio=getRatio();
 
   entries.forEach((e,i)=>{
 
@@ -82,13 +86,24 @@ function render(json){
 
     html+=`
     <div class='item'>
-  <div class='img' style='background-image:url(${img});position:relative'>
-    <div class='category'>
-      <a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a>
-    </div>
-    <a class='cap' href='${link}'>${title}</a>
-  </div>
-</div>`;
+      <div class='img'
+           style="
+             background-image:url('${img}');
+             position:relative;
+             display:block;
+             width:100%;
+             padding-top:${ratio};
+             background-position:center;
+             background-size:cover;
+             background-repeat:no-repeat;
+             border-radius:var(--sliderBd-radius);
+           ">
+        <div class='category'>
+          <a class='button' href='${blogUrl}/search/label/${encodeURIComponent(label)}'>${label}</a>
+        </div>
+        <a class='cap' href='${link}'>${title}</a>
+      </div>
+    </div>`;
 
     d+=`<span class='i' data-i='${i+1}'></span>`;
   });
@@ -130,13 +145,6 @@ function start(){
   box.querySelectorAll(".i").forEach(dot=>{
     dot.onclick=()=>show(index=parseInt(dot.dataset.i));
   });
-
-  box.querySelectorAll(".category").forEach(el=>{
-    el.onclick=e=>{
-      e.preventDefault();
-      location.href=blogUrl+"/search/label/"+encodeURIComponent(el.textContent.trim());
-    };
-  });
 }
 
 /* ===== jsonp ===== */
@@ -150,7 +158,7 @@ document.head.appendChild(s);
 
 }
 
-/* init semua slider di halaman */
+/* init */
 function boot(){
   document.querySelectorAll(".slideB").forEach(initSliderBox);
 }
