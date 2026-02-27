@@ -69,7 +69,13 @@ function initSliderBox(box){
     <button class='next'>&#10095;</button>
     <div class='slideI'></div>
   `;
-
+const sliderRoot = box.querySelector('.slider');
+sliderRoot.style.width = "100%";
+sliderRoot.style.maxWidth = "100%";
+sliderRoot.style.margin = "0";
+sliderRoot.style.padding = "0";
+sliderRoot.style.display = "block";
+sliderRoot.style.boxSizing = "border-box";
   let index=1,timer;
 
 /* ===== RESPONSIVE RATIO FIX ===== */
@@ -107,6 +113,7 @@ function render(json){
     const label=getLabel(e);
 
     html+=`
+<div class='item' style="width:100%;margin:0;padding:0;">
     <div class='item'>
       <div class='img'
            style="
