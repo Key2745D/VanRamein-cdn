@@ -1,64 +1,66 @@
 (function(){
 
-/* ================= CONFIG DEFAULT ================= */
-const DEFAULT = {
-  max:5,
-  interval:5000,
-  credit:"www.vanramein.blog"
-};
+const CREDIT="www.vanramein.blog";
+const DEFAULT_MAX=5;
+const DEFAULT_INTERVAL=5000;
 
-/* ================= CREDIT LOCK ================= */
-function hasCredit(box){
-  return (box.innerHTML||"").toLowerCase().includes(DEFAULT.credit);
+/* ---------- wait element exist ---------- */
+function ready(fn){
+  if(document.readyState!="loading") fn();
+  else document.addEventListener("DOMContentLoaded",fn);
 }
 
-function disable(box){
-  box.innerHTML="";
-  box.style.display="none";
-}
+/* ---------- build structure ---------- */
+function normalize(box){
 
-/* ================= SLIDER ENGINE ================= */
-function startSlider(box){
-
-  if(!hasCredit(box)){
-    disable(box);
-    return;
+  if(!box.querySelector(".slider")){
+    box.innerHTML=`
+      <div class="slider"></div>
+      <button class="prev">&#10094;</button>
+      <button class="next">&#10095;</button>
+      <div class="slideI"></div>
+      <small class="vr-credit">created by: ${CREDIT}</small>
+    `;
   }
 
-  const max = parseInt(box.dataset.max)||DEFAULT.max;
-  const interval = parseInt(box.dataset.interval)||DEFAULT.interval;
-  const labelRaw = box.dataset.label || "";
-  const label = encodeURIComponent(labelRaw.trim());
+  if(!box.innerHTML.toLowerCase().includes(CREDIT)){
+    box.remove();
+    return false;
+  }
 
-  const slider = box.querySelector(".slider");
-  const dots = box.querySelector(".slideI");
+  return true;
+}
 
-  let index=1, timer;
+/* ---------- engine ---------- */
+function init(box){
 
-  /* render */
-  window["vanramein_render_"+Math.random().toString(36).slice(2)] = function(json){
+  if(!normalize(box)) return;
 
-    if(!json || !json.feed || !json.feed.entry){
-      box.style.display="none";
-      return;
-    }
+  const slider=box.querySelector(".slider");
+  const dots=box.querySelector(".slideI");
+  const max=parseInt(box.dataset.max)||DEFAULT_MAX;
+  const interval=parseInt(box.dataset.interval)||DEFAULT_INTERVAL;
+  const labelRaw=box.dataset.label||"";
+  const label=encodeURIComponent(labelRaw.trim());
 
-    let html="", dot="";
+  const cb="vr_cb_"+Math.random().toString(36).slice(2);
 
-    json.feed.entry.slice(0,max).forEach((post,i)=>{
+  window[cb]=function(json){
 
-      const title = post.title.$t;
-      const link = post.link.find(l=>l.rel==="alternate").href;
+    if(!json.feed||!json.feed.entry){box.style.display="none";return;}
+
+    let html="",dot="";
+
+    json.feed.entry.slice(0,max).forEach((p,i)=>{
+
+      const title=p.title.$t;
+      const link=p.link.find(l=>l.rel=="alternate").href;
 
       let img="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
-      if(post.media$thumbnail){
-        img=post.media$thumbnail.url.replace("s72-c","s1600");
-      }
+      if(p.media$thumbnail) img=p.media$thumbnail.url.replace("s72-c","s1600");
 
       let labelName="Blogger";
-      if(post.category && post.category.length){
-        labelName=post.category[0].term;
-      }
+      if(p.category&&p.category.length) labelName=p.category[0].term;
 
       html+=`
       <div class="item">
@@ -76,53 +78,43 @@ function startSlider(box){
     slider.innerHTML=html;
     dots.innerHTML=dot;
 
+    let index=1;
     const items=box.querySelectorAll(".item");
     const d=box.querySelectorAll(".i");
 
     function show(n){
-      if(n>items.length)index=1;
-      if(n<1)index=items.length;
-
-      items.forEach(el=>el.style.display="none");
-      d.forEach(el=>el.classList.remove("active"));
-
+      if(n>items.length) index=1;
+      if(n<1) index=items.length;
+      items.forEach(e=>e.style.display="none");
+      d.forEach(e=>e.classList.remove("active"));
       items[index-1].style.display="block";
       d[index-1].classList.add("active");
     }
-
-    function next(){ show(++index); }
 
     box.querySelector(".prev").onclick=()=>show(--index);
     box.querySelector(".next").onclick=()=>show(++index);
     d.forEach(el=>el.onclick=()=>show(index=parseInt(el.dataset.i)));
 
     show(index);
-    timer=setInterval(next,interval);
+    setInterval(()=>show(++index),interval);
   };
 
-  /* build feed url safely */
-  const cb = Object.keys(window).find(k=>k.startsWith("vanramein_render_"));
-  const blog = location.origin;
+  const blog=location.origin;
+  let url;
 
-let url;
-if(!labelRaw || labelRaw==="recent"){
-  url=`${blog}/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=${cb}`;
-}else{
-  url=`${blog}/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
-}
+  if(!labelRaw||labelRaw=="recent")
+    url=`${blog}/feeds/posts/default?alt=json-in-script&max-results=${max}&callback=${cb}`;
+  else
+    url=`${blog}/feeds/posts/default/-/${label}?alt=json-in-script&max-results=${max}&callback=${cb}`;
 
   const s=document.createElement("script");
   s.src=url;
-  s.onerror=()=>box.style.display="none";
   document.body.appendChild(s);
 }
 
-/* ================= AUTO INIT ================= */
-function init(){
-  document.querySelectorAll(".slideB").forEach(startSlider);
-}
-
-if(document.readyState==="complete") init();
-else window.addEventListener("load",init);
+/* ---------- boot ---------- */
+ready(()=>{
+  document.querySelectorAll(".slideB").forEach(init);
+});
 
 })();
