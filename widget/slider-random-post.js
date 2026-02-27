@@ -5,7 +5,7 @@
 const NO_IMAGE='data:image/png;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const CREDIT_TEXT="created by: www.vanramein.blog";
 
-/* ================= CORE FUNCTIONS (WAJIB DI ATAS) ================= */
+/* ================= CORE FUNCTIONS ================= */
 
 function disableSlider(box,reason){
   if(!box || box.dataset.vrDisabled) return;
@@ -45,11 +45,11 @@ function validateCredit(box){
   }
 }
 
-/* ================= OBSERVER ================= */
-
+/* observer */
 const observer=new MutationObserver(()=>{
   document.querySelectorAll(".slideB").forEach(validateCredit);
 });
+observer.observe﻿
 observer.observe(document.body,{childList:true,subtree:true});
 
 /* ================= MAIN ================= */
@@ -72,8 +72,14 @@ function initSliderBox(box){
 
   let index=1,timer;
 
-/* ===== ambil ratio css ===== */
+/* ===== RESPONSIVE RATIO FIX ===== */
 function getRatio(){
+
+  const w=window.innerWidth;
+
+  if(w<=480) return "70%";   // HP
+  if(w<=768) return "60%";   // tablet
+
   const r=getComputedStyle(document.documentElement).getPropertyValue('--sliderRatio');
   return r && r.trim()!=="" ? r : "45%";
 }
@@ -130,7 +136,7 @@ function render(json){
   start();
 }
 
-/* ===== slider logic ===== */
+/* ===== slider ===== */
 
 function show(n){
   const slides=box.querySelectorAll(".item");
@@ -174,8 +180,7 @@ document.head.appendChild(s);
 
 }
 
-/* ================= BOOT ================= */
-
+/* boot */
 function boot(){
   document.querySelectorAll(".slideB").forEach(initSliderBox);
 }
