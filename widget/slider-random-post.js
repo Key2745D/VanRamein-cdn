@@ -1,8 +1,9 @@
-//VanRamein Random Post Slider - Clean Engine
-//Credit: www.vanramein.blog
+//VanRamein Random Post Slider - Stable Engine
+//File: /widget/slider-random-post.js
 
 (function(){
 
+/* ================= WAIT CONFIG ================= */
 function waitVanrameinConfig(start){
   let retry=0;
   const timer=setInterval(()=>{
@@ -19,129 +20,133 @@ function waitVanrameinConfig(start){
 
 waitVanrameinConfig(function(){
 
+/* ================= CREDIT VALIDATOR ================= */
 if(window.wcSliderRandom.sharedBy !== "www.vanramein.blog"){
   console.warn("VanRamein Slider blocked: credit removed");
   return;
 }
 
-(function(){
+/* ================= READY ================= */
+function ready(fn){
+  document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
+}
 
-  const REQUIRED_CREDIT="www.vanramein.blog";
-  if(!window.wcSliderRandom || window.wcSliderRandom.sharedBy!==REQUIRED_CREDIT){
-    console.warn("VanRamein Slider blocked: credit removed");
-    return;
-  }
+/* ================= FETCH BLOGGER JSONP ================= */
+function fetchPosts(cb){
 
-  // ===== WAIT DOM =====
-  function ready(fn){
-    document.readyState!="loading"?fn():document.addEventListener("DOMContentLoaded",fn);
-  }
+  const amount = window.wcSliderRandom.amount || 5;
+  const url = (window.wcSliderRandom.feeds || "https://www.vanramein.blog")
+      + "/feeds/posts/default?alt=json-in-script&max-results="+amount+"&callback=vanrameinSliderFeed";
 
-  // ===== FETCH BLOGGER VIA JSONP (ANTI CORS) =====
-  function fetchPosts(cb){
-    const amount = window.wcSliderRandom.amount || 5;
-    const base   = window.wcSliderRandom.feeds.replace(/\/$/,"");
-
-    const url =
-      base +
-      "/feeds/posts/default?alt=json-in-script&max-results=" +
-      amount +
-      "&callback=vanrameinSliderFeed";
-
-    window.vanrameinSliderFeed=function(json){
-      if(!json || !json.feed || !json.feed.entry){
-        console.warn("VanRamein Slider: empty feed");
-        return;
-      }
-      cb(json.feed.entry);
-    };
-
-    const s=document.createElement("script");
-    s.src=url;
-    document.body.appendChild(s);
-  }
-
-  // ===== BUILD HTML =====
-  function getThumb(p){
-    try{
-      return p.media$thumbnail.url.replace("s72-c","s1600");
-    }catch(e){
-      return window.wcSliderRandom.noImage || "";
+  window.vanrameinSliderFeed=function(json){
+    if(!json.feed || !json.feed.entry){
+      console.warn("VanRamein Slider: empty feed");
+      return;
     }
-  }
+    cb(json.feed.entry);
+  };
 
-  function getLink(p){
-    for(let i=0;i<p.link.length;i++)
-      if(p.link[i].rel==="alternate") return p.link[i].href;
-    return "#";
-  }
+  const s=document.createElement("script");
+  s.src=url;
+  document.body.appendChild(s);
+}
 
-  function build(container,posts){
-    let html='<div class="slider">';
+/* ================= BUILD HTML ================= */
+function build(container,posts){
 
-    posts.forEach(p=>{
-      const img   = getThumb(p);
-      const link  = getLink(p);
-      const title = (p.title && p.title.$t) ? p.title.$t : "No title";
+  let html='<div class="slider">';
 
-      html+=`<a class="item" href="${link}">
-        <div class="img" style="background-image:url('${img}')"></div>
-        <div class="cap">${title}</div>
-      </a>`;
-    });
+  posts.forEach(p=>{
 
-    html+='</div><div class="slideI"></div>';
-    container.innerHTML=html;
-  }
-
-  // ===== ENGINE =====
-  function engine(container){
-    const items=[...container.querySelectorAll('.item')];
-    if(!items.length) return;
-
-    const dots=container.querySelector('.slideI');
-    let i=0;
-
-    items.forEach(()=>dots.innerHTML+='<span class="i"></span>');
-    const di=[...dots.children];
-
-    function show(n){
-      items.forEach(el=>el.style.display='none');
-      di.forEach(el=>el.classList.remove('active'));
-      items[n].style.display='block';
-      di[n].classList.add('active');
+    // link
+    let link="#";
+    if(p.link){
+      let alt=p.link.find(l=>l.rel==="alternate");
+      if(alt) link=alt.href;
     }
 
-    function next(){ i=(i+1)%items.length; show(i); }
-    show(i);
+    // title
+    let title=(p.title && p.title.$t)?p.title.$t:"No title";
 
-    if(window.wcSliderRandom.auto==='true')
-      setInterval(next,parseInt(window.wcSliderRandom.duration||3000));
-
-    if(window.wcSliderRandom.swipe==='true'){
-      let sx=0;
-      container.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
-      container.addEventListener('touchend',e=>{
-        let dx=e.changedTouches[0].clientX-sx;
-        if(Math.abs(dx)>40) dx>0?i--:i++;
-        if(i<0)i=items.length-1;
-        if(i>=items.length)i=0;
-        show(i);
-      },{passive:true});
+    // image safe
+    let img="";
+    if(p.media$thumbnail && p.media$thumbnail.url){
+      img=p.media$thumbnail.url.replace("s72-c","s1600");
+    }else if(p.content && p.content.$t){
+      let m=p.content.$t.match(/<img.+src="([^"]+)"/);
+      if(m) img=m[1];
     }
-  }
+    if(!img) img=window.wcSliderRandom.noImage||"";
 
-  // ===== START =====
-  ready(()=>{
-    const box=document.querySelector('.vanrameinslider');
-    if(!box) return;
+    // label
+    let label="";
+    if(p.category && p.category.length){
+      label=p.category[0].term;
+    }
 
-    fetchPosts(posts=>{
-      build(box,posts);
-      engine(box);
-    });
+    html+=`<a class="item" href="${link}">
+      <div class="img" style="background-image:url('${img}')"></div>
+      <div class="cap">
+        ${label?`<span class="category">${label}</span>`:""}
+        ${title}
+      </div>
+    </a>`;
   });
 
-})();
+  html+='</div><div class="slideI"></div>';
+  container.innerHTML=html;
+}
+
+/* ================= ENGINE ================= */
+function engine(container){
+
+  const items=[...container.querySelectorAll('.item')];
+  if(!items.length) return;
+
+  const dots=container.querySelector('.slideI');
+  let i=0;
+
+  items.forEach(()=>dots.innerHTML+='<span class="i"></span>');
+  const di=[...dots.children];
+
+  function show(n){
+    items.forEach(el=>el.style.display='none');
+    di.forEach(el=>el.classList.remove('active'));
+    items[n].style.display='block';
+    di[n].classList.add('active');
+  }
+
+  function next(){ i=(i+1)%items.length; show(i); }
+  function prev(){ i=(i-1+items.length)%items.length; show(i); }
+
+  show(i);
+
+  // auto slide
+  if(window.wcSliderRandom.auto==='true'){
+    setInterval(next,parseInt(window.wcSliderRandom.duration||3000));
+  }
+
+  // swipe
+  if(window.wcSliderRandom.swipe==='true'){
+    let sx=0;
+    container.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+    container.addEventListener('touchend',e=>{
+      let dx=e.changedTouches[0].clientX-sx;
+      if(Math.abs(dx)>40) dx>0?prev():next();
+    },{passive:true});
+  }
+}
+
+/* ================= START ================= */
+ready(()=>{
+  const box=document.querySelector('.vanrameinslider');
+  if(!box) return;
+
+  fetchPosts(posts=>{
+    build(box,posts);
+    engine(box);
+  });
 });
+
+}); // end wait config
 })();
